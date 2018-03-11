@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.twobomb.wordGen.App.q;
 
 //Добавить нумерация, переносы,необяхательные, сохранение, в getBlock проверка синтаксиса (закрывающая есть\нет)
 public class WordController {
@@ -97,13 +96,13 @@ public class WordController {
                             }
                             switch (str.charAt(k)) {
                                 case '\t':
-                                    q("\t");
+                                   // q("\t");
                                     run.addTab();
                                     break;
                                 case '\n':
                                     if(k == str.length()-1)
                                         return;
-                                    q("\n");
+                                  //  q("\n");
                                     //run.addCarriageReturn();
                                     //Старим курсор в конец певого параграфа или в начало следующего
                                     if(doc.getParagraphs().indexOf(p) != -1 && doc.getParagraphs().indexOf(p)+1 < doc.getParagraphs().size()) {
@@ -118,7 +117,7 @@ public class WordController {
                                     run= p.createRun();
                                     break;
                                 default:
-                                    q(String.valueOf(str.charAt(k)));
+                                  //  q(String.valueOf(str.charAt(k)));
                                     run.setText(String.valueOf(str.charAt(k)));
                             }
 

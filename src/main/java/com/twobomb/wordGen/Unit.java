@@ -1,6 +1,7 @@
 package com.twobomb.wordGen;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,15 +50,16 @@ class Unit {
         }
             return false;
     }
-    public String getText(WordGenValues value_service){
+    public String getText(HashMap<String,Object> rootmap){
         switch (type) {
             case MAIN: case ROOT: {
                 String tmp = getTextblockWithoutOper();
                 for (Unit child : getChildren()) {
-                    tmp = tmp.replaceFirst(addSlashes(child.textblock), child.getText(value_service));
+                    tmp = tmp.replaceFirst(addSlashes(child.textblock), child.getText(rootmap));
                 }
                 return tmp; }
             case VALUE:
+                String key = getTextblockWithoutOper().trim();
                 if(isHaveParent(LIST)) {
                     Unit u = this;
                     List<Integer> indexes = new ArrayList<Integer>();
@@ -67,14 +69,23 @@ class Unit {
                             indexes.add(0,u.parent._iterator);
                         u = u.parent;
                     }
-                    return value_service.getValue(getTextblockWithoutOper().trim(), indexes);
+
+                    List<Object> list = (List)getValueAsKey(rootmap,key);
+                    for (int i = 0; i < indexes.size();i++)
+                        if(i == indexes.size()-1) {
+                            String str = (String)list.get(indexes.get(i));
+                            return str;
+                        }
+                        else
+                            list = (List)list.get(indexes.get(i));
+
+
                 }
-                else
-                    return value_service.getValue(getTextblockWithoutOper().trim());
+                else return (String)getValueAsKey(rootmap,key);
             case NOT_REQUIRED:{
                 String tmp = getTextblockWithoutOper();
                 for (Unit child : getChildren()) {
-                    String newval = child.getText(value_service);
+                    String newval = child.getText(rootmap);
                     if(newval == null || newval.equals(""))
                         return "";
                     else
@@ -82,34 +93,66 @@ class Unit {
                 }
                 return tmp;}
             case LIST:
-                int cnt = value_service.getCount(getListId());
-                if(isHaveParent(LIST)) {
-                    Unit u = this;
-                    List<Integer> indexes = new ArrayList<Integer>();
-
-                    while (u.parent != null) {
-                        if(u.parent.getType() == LIST)
-                            indexes.add(0,u.parent._iterator);
-                        u = u.parent;
-                    }
-                    cnt = value_service.getCount(getListId(),indexes);
+                Unit u = this;
+                List<Integer> indexes = new ArrayList<Integer>();
+                while (u.parent != null) {
+                    if(u.parent.getType() == LIST)
+                        indexes.add(0,u.parent._iterator);
+                    u = u.parent;
                 }
+                List<Object> list  = (List)getValueAsKey(rootmap,findFirstChild(this,VALUE).getTextblockWithoutOper());
+                int cnt = 0;
+                for(int i = 0; i < indexes.size();i++)
+                        list = (List)list.get(indexes.get(i));
+                cnt = list.size();
                 String tmp = "";
                 for(_iterator = 0; _iterator < cnt;_iterator++) {
                     String tmpTmpl = getTextblockWithoutOper();
                     for(Unit child:getChildren()) {
-                        tmpTmpl= tmpTmpl.replaceFirst(addSlashes(child.textblock),child.getText(value_service));
+                        tmpTmpl= tmpTmpl.replaceFirst(addSlashes(child.textblock),child.getText(rootmap));
                     }
                     tmp+=tmpTmpl;
                 }
                 return tmp;
                 }
 
+        return "";
+    }
+    public Unit findFirstChild(Unit u,Type type){
+        for(Unit child:u.getChildren())
+            if(child.getType() == type)
+                return child;
+            else if(child.getChildren().size() > 0) {
+                if (findFirstChild(child, type) != null)
+                    return findFirstChild(child, type);
+            }
         return null;
     }
     public String getListId(){
         Unit main = getMainBlock();
         return getListId(main,this,"");
+    }
+    static boolean isExists(HashMap<String,Object> map , String keys){//Проверяет существует ли такая ветка ключей ,keys  - value.value1.value2
+        String[] values = keys.split("\\.");
+        for(int i = 0; i < values.length;i++)
+            if(map.containsKey(values[i].trim())) {
+                if (i == values.length - 1)
+                    return true;
+                else if (!(map.get(values[i].trim()) instanceof HashMap))
+                    return false;
+                else
+                    map = (HashMap) map.get(values[i].trim());
+            }
+            else
+                return false;
+        return false;
+    }
+    static Object getValueAsKey(HashMap<String,Object> map ,String keys){//Возвращает значение по векте ключей,keys  - value.value1.value2
+        if(!isExists(map,keys))return null;
+        String[] values = keys.split("\\.");
+        for(int i = 0; i < values.length-1;i++)
+            map = (HashMap) map.get(values[i].trim());
+        return map.get(values[values.length-1].trim());
     }
     public String getListId(Unit m,Unit list,String id){//Получить ид листа
         if(m.eq(list))

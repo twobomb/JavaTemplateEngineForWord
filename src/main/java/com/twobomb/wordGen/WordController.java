@@ -16,6 +16,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.sql.Struct;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,13 +31,14 @@ public class WordController {
         this.input = inputPattern;
         this.output = output;
     }
-    public void convert(WordGenValues dataHandler) throws Exception {
+    public void convert(HashMap<String,Object> rootmap) throws Exception {
         XWPFDocument doc = read();
         Unit u = Unit.Instance(getText(doc));
         List<Unit> ll = u.getChildren();
+//        Object test = ll.get(0).getChildren().get(0).getChildren().get(2).getText(rootmap);
         for (Unit z:ll)
-            replace(doc, z.getTextblock(), z.getText(dataHandler));
-        write(u.getText(dataHandler),doc);
+            replace(doc, z.getTextblock(), z.getText(rootmap));
+        write(u.getText(rootmap),doc);
         doc.close();
     }
     private XWPFDocument read() throws IOException, InvalidFormatException {
@@ -96,13 +98,13 @@ public class WordController {
                             }
                             switch (str.charAt(k)) {
                                 case '\t':
-                                   // q("\t");
+                                   System.out.print("\t");
                                     run.addTab();
                                     break;
                                 case '\n':
                                     if(k == str.length()-1)
                                         return;
-                                  //  q("\n");
+                                    System.out.print("\n");
                                     //run.addCarriageReturn();
                                     //Старим курсор в конец певого параграфа или в начало следующего
                                     if(doc.getParagraphs().indexOf(p) != -1 && doc.getParagraphs().indexOf(p)+1 < doc.getParagraphs().size()) {
@@ -117,7 +119,7 @@ public class WordController {
                                     run= p.createRun();
                                     break;
                                 default:
-                                  //  q(String.valueOf(str.charAt(k)));
+                                    System.out.print(String.valueOf(str.charAt(k)));
                                     run.setText(String.valueOf(str.charAt(k)));
                             }
 
